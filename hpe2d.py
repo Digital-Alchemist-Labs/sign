@@ -5,8 +5,12 @@ from model_dim import InferModel
 import torch
 import yaml
 from utils import *
-
 from PIL import ImageFont, ImageDraw, Image
+import warnings
+import json
+import requests
+
+warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     with open("configs/default.yaml") as f:
@@ -17,7 +21,7 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     mp_drawing = mp.solutions.drawing_utils
     mp_hands = mp.solutions.hands
-    cap = cv2.VideoCapture(4)
+    cap = cv2.VideoCapture(0)  
 
     w = 640
     h = 480
@@ -40,16 +44,25 @@ if __name__ == "__main__":
         "사랑",
         "수어",
         "만나서 반가워요!",
+        "끝"  # '끝'을 추가하여 번역 종료 시점을 감지합니다.
     ]
-    model = InferModel().load_from_checkpoint(checkpoint_path=ckpt_name)
-    model.eval().to("cuda")
+    model = InferModel.load_from_checkpoint(checkpoint_path=ckpt_name)
+    model.eval().to(device)  
+    print("Model loaded and moved to device successfully")
     label_play_time = 0
     display_flag = False
+
+    translated_words = []  # 번역된 단어를 저장할 리스트
+
     with mp_hands.Hands(
         min_detection_confidence=0.5, min_tracking_confidence=0.5
     ) as hands:
         while cap.isOpened():
             ret, frame = cap.read()
+            if not ret:
+                print("Failed to capture image from camera")
+                break
+
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             image = cv2.flip(image, 1)
             image.flags.writeable = False
@@ -63,7 +76,6 @@ if __name__ == "__main__":
                     left_hand, right_hand = False, False
                     for num_hand, hand_type in enumerate(results.multi_handedness):
                         hand_score = hand_type.classification[0].score
-                        # hand type 0: Left / 1: Right
                         hand_type = hand_type.classification[0].index
                         if hand_score < 0.8:
                             continue
@@ -93,12 +105,12 @@ if __name__ == "__main__":
             cv2.imshow("Sign-Language Translator", image)
 
             key_queue = cv2.waitKey(1)
-            if (key_queue & 0xFF == ord("s")) and translation_flag == False:
+            if (key_queue & 0xFF == ord("s")) and not translation_flag:
                 print("Start recording")
                 translation_flag = True
                 key_queue = 0
 
-            if (key_queue & 0xFF == ord("e")) and translation_flag == True:
+            if (key_queue & 0xFF == ord("e")) and translation_flag:
                 print("Save record...")
                 translation_flag = False
                 print("End recording")
@@ -112,13 +124,41 @@ if __name__ == "__main__":
                         hands_keypoints[int(ids[i]), ...].unsqueeze(0)
                     )
                 keypoint_sequence = torch.cat(keypoint_sequence, dim=0)
-                input_data = keypoint_sequence.unsqueeze(0).to("cuda")
+                input_data = keypoint_sequence.unsqueeze(0).to(device)
                 print(keypoint_sequence.shape)
                 output = model(input_data)
                 labels = torch.max(output, dim=1)[1][0]
                 labels = korean[labels]
+
+                # 번역된 단어를 리스트에 추가
+                translated_words.append(labels)
+
+                # '끝'이라는 단어가 감지되면 모아둔 단어들을 JSON 형식으로 변환하고 전송
+                if labels == "끝":
+                    # JSON 형식으로 변환
+                    json_data = json.dumps({"words": translated_words})
+
+                    # 전송할 서버의 IP 주소 및 포트 번호
+                    server_ip = "http://your-server-ip-address:your-port-number"
+
+                    # POST 요청을 통해 데이터 전송
+                    try:
+                        response = requests.post(server_ip, data=json_data, headers={"Content-Type": "application/json"})
+                        if response.status_code == 200:
+                            print("Data sent successfully!")
+                        else:
+                            print(f"Failed to send data, status code: {response.status_code}")
+                    except Exception as e:
+                        print(f"Error sending data: {e}")
+
+                    # 단어 리스트 초기화
+                    translated_words = []
+
                 display_flag = True
                 hands_keypoints = []
 
             if key_queue & 0xFF == ord("q"):
                 break
+
+    cap.release()
+    cv2.destroyAllWindows()

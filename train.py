@@ -34,8 +34,10 @@ class TrainerModule(pl.LightningModule):
         self.model1 = skelTrans2(num_classes, 21, 1, 60, 1, mask=False)
         self.model2 = skelTrans2(num_classes, 21, 1, 60, 1, mask=False)
         self.model3 = skelTrans2(num_classes, 42, 1, 60, 1, mask=False)
+        
+        # Accuracy metric initialization with the task argument
         self.accuracy = torchmetrics.classification.Accuracy(
-            multiclass=True, num_classes=num_classes
+            task="multiclass", num_classes=num_classes
         )
 
     def training_step(self, batch):
@@ -77,7 +79,7 @@ class TrainerModule(pl.LightningModule):
 class DataModule(pl.LightningDataModule):
     def __init__(self, batch_size: int = 4):
         super().__init__()
-        self.keyp_path = "/home/jaehyeong/Sign-Language-Project/our_data"
+        self.keyp_path = "./our_data"
         self.batch_size = batch_size
 
     def setup(self, stage=None):
@@ -88,11 +90,12 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(
             self.nia_train,
             batch_size=self.batch_size,
-            num_workers=10,
+            num_workers=14,
             collate_fn=custom_collate,
             shuffle=True,
         )
 
+    # Uncomment if you want to use a validation dataloader
     # def val_dataloader(self):
     #     return DataLoader(
     #         self.nia_val,

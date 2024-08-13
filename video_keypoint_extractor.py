@@ -7,7 +7,7 @@ import os
 if __name__ == "__main__":
     mp_drawing = mp.solutions.drawing_utils
     mp_hands = mp.solutions.hands
-    cap = cv2.VideoCapture(4)
+    cap = cv2.VideoCapture(0)
     hands_keypoints = []
     translation_flag = False
     display_flag = False
@@ -58,8 +58,8 @@ if __name__ == "__main__":
                 translation_flag = False
                 print("End recording")
                 key_queue = 0
-                num = "10"
-                dir_path = "/home/jaehyeong/Sign-Language-Project/our_data/"
+                num = "11"
+                dir_path = "./our_data/"
                 fn = f"kp_{num}_" + str(len(os.listdir(dir_path + num)) + 1) + ".json"
                 print(fn)
                 with open(f"our_data/{num}/" + fn, "w") as f:
