@@ -44,6 +44,10 @@ if __name__ == "__main__":
         "사랑",
         "수어",
         "만나서 반가워요!",
+        "미세먼지",
+        "싫다",
+        "무엇인가요?",
+        "날씨",
         "끝"  # '끝'을 추가하여 번역 종료 시점을 감지합니다.
     ]
     model = InferModel.load_from_checkpoint(checkpoint_path=ckpt_name)
