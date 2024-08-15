@@ -58,7 +58,7 @@ if __name__ == "__main__":
                 translation_flag = False
                 print("End recording")
                 key_queue = 0
-                num = "11"
+                num = "15"
                 dir_path = "./our_data/"
                 fn = f"kp_{num}_" + str(len(os.listdir(dir_path + num)) + 1) + ".json"
                 print(fn)

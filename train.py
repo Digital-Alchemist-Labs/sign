@@ -90,7 +90,7 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(
             self.nia_train,
             batch_size=self.batch_size,
-            num_workers=14,
+            num_workers=15,
             collate_fn=custom_collate,
             shuffle=True,
         )
