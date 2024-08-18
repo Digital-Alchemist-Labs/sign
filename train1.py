@@ -7,7 +7,6 @@ from dataset import OurDataset
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
 import yaml
-import matplotlib.pyplot as plt
 
 
 def custom_collate(batch):
@@ -19,7 +18,7 @@ def custom_collate(batch):
 
 
 def gen_src_mask(total_len, len_list):
-    batch_len = len_list.size(0)
+    batch_len = len(len_list)
     zero = torch.zeros(batch_len, total_len + 1)
     for tens, t in zip(zero, len_list):
         mask = torch.ones(total_len - t)
@@ -29,85 +28,52 @@ def gen_src_mask(total_len, len_list):
 
 
 class TrainerModule(pl.LightningModule):
-    def __init__(self, num_classes, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__()
 
-        self.num_classes = num_classes
-        self.model1 = skelTrans2(self.num_classes, 21, 1, 60, 1, mask=False)
-        self.model2 = skelTrans2(self.num_classes, 21, 1, 60, 1, mask=False)
-        self.model3 = skelTrans2(self.num_classes, 42, 1, 60, 1, mask=False)
+        self.model1 = skelTrans2(num_classes, 21, 1, 60, 1, mask=False)
+        self.model2 = skelTrans2(num_classes, 21, 1, 60, 1, mask=False)
+        self.model3 = skelTrans2(num_classes, 42, 1, 60, 1, mask=False)
         
+        # Accuracy metric initialization with the task argument
         self.accuracy = torchmetrics.classification.Accuracy(
-            task="multiclass", num_classes=self.num_classes
+            task="multiclass", num_classes=num_classes
         )
-        self.train_loss_history = []
-        self.val_acc_history = []
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch):
         x = batch["input"]
         y = batch["label"]
         l = batch["len_list"]
         _, total_len, _, _ = x.shape
         mask = gen_src_mask(total_len, l).to("cuda")
-        labels = torch.as_tensor(y, device='cuda')
+        labels = torch.tensor(y).to("cuda")
         z = self.model1(x[:, :, :21, :], mask)
         z2 = self.model2(x[:, :, 21:, :], mask)
         z3 = self.model3(x, mask)
         loss = F.cross_entropy(z, labels)
         loss2 = F.cross_entropy(z2, labels)
         loss3 = F.cross_entropy(z3, labels)
-        loss_sum = (loss + loss2 + loss3) / 3
-        acc = self.accuracy(z, labels)
-        
-        self.train_loss_history.append(loss_sum.item())
+        loss_sum = loss + loss2 + loss3
         self.log("train_loss_step", loss_sum)
-        self.log("train_acc_step", acc)
         return loss_sum
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch):
         x = batch["input"]
         y = batch["label"]
         l = batch["len_list"]
+        mask = None
+        labels = torch.tensor(y).to("cuda")
+        z = self.model1(x[:, :, :21, :], mask)
+        z2 = self.model2(x[:, :, 21:, :], mask)
+        z3 = self.model3(x, mask)
+        z = (z + z2 + z3) / 3
 
-        with torch.no_grad():
-            labels = torch.as_tensor(y, device='cuda')
-            z = self.model1(x[:, :, :21, :], None)
-            z2 = self.model2(x[:, :, 21:, :], None)
-            z3 = self.model3(x, None)
-            z = (z + z2 + z3) / 3
-
-            acc = self.accuracy(z, labels)
-            self.val_acc_history.append(acc.item())
-            self.log("val_acc_step", acc)
+        acc = self.accuracy(z, labels)
+        self.log("val_acc_step", acc)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
-
-    def on_train_end(self):
-        self.plot_metrics()
-
-    def plot_metrics(self):
-        epochs = range(len(self.train_loss_history))
-
-        plt.figure(figsize=(12, 5))
-
-        plt.subplot(1, 2, 1)
-        plt.plot(epochs, self.train_loss_history, label='Train Loss')
-        plt.xlabel('Epochs')
-        plt.ylabel('Loss')
-        plt.title('Training Loss over Epochs')
-        plt.legend()
-
-        plt.subplot(1, 2, 2)
-        plt.plot(epochs, self.val_acc_history, label='Validation Accuracy')
-        plt.xlabel('Epochs')
-        plt.ylabel('Accuracy')
-        plt.title('Validation Accuracy over Epochs')
-        plt.legend()
-
-        plt.tight_layout()
-        plt.show()
 
 
 class DataModule(pl.LightningDataModule):
@@ -115,7 +81,6 @@ class DataModule(pl.LightningDataModule):
         super().__init__()
         self.keyp_path = "./our_data"
         self.batch_size = batch_size
-        self.num_workers = min(15, torch.multiprocessing.cpu_count())
 
     def setup(self, stage=None):
         self.nia_train = OurDataset(keyp_path=self.keyp_path)
@@ -125,30 +90,31 @@ class DataModule(pl.LightningDataModule):
         return DataLoader(
             self.nia_train,
             batch_size=self.batch_size,
-            num_workers=self.num_workers,
+            num_workers=15,
             collate_fn=custom_collate,
             shuffle=True,
         )
 
-    def val_dataloader(self):
-        return DataLoader(
-            self.nia_val,
-            batch_size=self.batch_size,
-            num_workers=self.num_workers,
-            collate_fn=custom_collate,
-        )
+    # Uncomment if you want to use a validation dataloader
+    # def val_dataloader(self):
+    #     return DataLoader(
+    #         self.nia_val,
+    #         batch_size=self.batch_size,
+    #         num_workers=10,
+    #         collate_fn=custom_collate,
+    #     )
 
 
 if __name__ == "__main__":
     with open("configs/default.yaml") as f:
-        cfg = yaml.safe_load(f)
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     num_classes = cfg["num_classes"]
     epochs = cfg["epochs"]
     ckpt_name = cfg["ckpt_name"]
 
     trainer = pl.Trainer(accelerator="gpu", max_epochs=epochs, devices=1)
-    model = TrainerModule(num_classes=num_classes)
+    model = TrainerModule()
     data = DataModule()
     trainer.fit(model, data)
     trainer.save_checkpoint(ckpt_name)
