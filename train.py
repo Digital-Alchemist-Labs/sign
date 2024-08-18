@@ -19,11 +19,11 @@ def custom_collate(batch):
 
 
 def gen_src_mask(total_len, len_list):
-    batch_len = len_list.size(0)
+    batch_len = len(len_list)  # 리스트의 길이를 구합니다.
     zero = torch.zeros(batch_len, total_len + 1)
     for tens, t in zip(zero, len_list):
         mask = torch.ones(total_len - t)
-        tens[t + 1 :] = mask
+        tens[t + 1:] = mask
     ret = zero.bool()
     return torch.transpose(ret, 0, 1)
 
