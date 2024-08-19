@@ -37,7 +37,7 @@ with right_column:
 # 시작 버튼이 눌리면 실행
 if start_button:
     # cv2 및 Mediapipe 관련 코드
-    video_file = r"C:\Users\kyo\Desktop\Human Activity Recognition using TensorFlow (CNN + LSTM) Code\dataset\수어\안녕하세요\안녕하세요1.mov"
+    video_file = "./dataset/안녕하세요.mov"
     cap = cv2.VideoCapture(video_file)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
@@ -73,7 +73,7 @@ if start_button:
     st.session_state.translated_words = hardcoded_response["words"]
 
     # 단어에 매핑된 수어 영상 파일 경로
-    dataset_path = r"C:\Users\kyo\Desktop\sign\dataset"
+    dataset_path = "./dataset"
     video_files = []
 
     for word in st.session_state.translated_words:
@@ -84,9 +84,9 @@ if start_button:
             st.warning(f"Video for word '{word}' not found.")
 
     # 영상 파일을 합쳐서 보여주는 코드
-    output_video = "output.mp4"
+    output_video = "output.mov"
     if video_files:
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        fourcc = cv2.VideoWriter_fourcc(*"mov")
         out = None
         frame_written = False  # 프레임이 작성되었는지 확인하는 플래그
 

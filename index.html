@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ChatGPT 열풍</title>
+        <style>
+            body {
+                /* display: flex;
+                justify-content: center;
+                align-items: center; */
+                width: 1000px;
+                height: 1000px;
+                /* height: 100vh; */
+                margin: 0 auto;
+                font-family: Arial, sans-serif;
+                background-color: #f0f0f0;
+                position: relative;
+                background: linear-gradient(
+                    to right,
+                    violet,
+                    indigo,
+                    blue,
+                    green,
+                    yellow,
+                    orange,
+                    red
+                );
+                background-size: 100% 100%;
+                animation: rainbow 15s ease infinite;
+                color: white;
+                /* -webkit-text-stroke: #f0f0f0; */
+                text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+                    1px 1px 0 #000;
+            }
+            /* .container {
+                text-align: center;
+                position: relative;
+            } */
+            .logo {
+                width: 200px;
+                height: 200px;
+                background-color: #10a37f;
+                margin-right: 20px;
+                animation: rotate 5s linear infinite;
+                position: absolute;
+                top: 400px;
+            }
+
+            .logo img {
+                width: 200px;
+                height: 200px;
+            }
+            .title {
+                position: absolute;
+                top: 250px;
+                /* left: 250px; */
+                width: 1000px;
+                height: 500px;
+                line-height: 500px;
+                text-align: center;
+                font-size: 100px;
+                animation: pulse 2s ease-in-out infinite;
+            }
+            .users {
+                position: absolute;
+                top: 450px;
+                right: 10px;
+                font-size: 50px;
+                animation: shake 0.5s ease-in-out infinite;
+            }
+            @keyframes rotate {
+                from {
+                    transform: rotate(0deg);
+                }
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes pulse {
+                0%,
+                100% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.1);
+                }
+            }
+            @keyframes shake {
+                0%,
+                100% {
+                    transform: rotate(0deg);
+                }
+                25% {
+                    transform: rotate(5deg);
+                }
+                75% {
+                    transform: rotate(-5deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="logo">
+            <img
+                src="chatgpt-logo-chat-gpt-icon-on-green-background-free-vector.jpg"
+                alt="logo" />
+        </div>
+        <h1 class="title">Chat GPT 열풍!</h1>
+        <div class="users">5일 만에 100만 사용자</div>
+    </body>
+</html>
